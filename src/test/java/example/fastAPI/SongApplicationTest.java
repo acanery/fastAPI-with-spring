@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,5 +48,13 @@ public class SongApplicationTest {
         JSONArray ids = documentContext.read("$..id");
         assertThat(ids).containsExactlyInAnyOrder(1,2,3,4);
 
+    }
+
+    @DirtiesContext
+    @Test
+    void shouldCreateANewSong(){
+        Song createdSong = new Song(null,"popArtist", null);
+        ResponseEntity<Void> response = restTemplate.postForEntity("/songs",createdSong, Void.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
 }
