@@ -3,12 +3,12 @@ package example.fastAPI;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,9 +37,18 @@ class SongController {
         Page<Song> page = songRepository.findAll(
                 PageRequest.of(
                         pageable.getPageNumber(),
-                        pageable.getPageSize()));
+                        pageable.getPageSize(),
+                        pageable.getSortOr(Sort.by(Sort.Direction.ASC,"streams"))));
 
         return ResponseEntity.ok(page.getContent());
     }
+
+    @PostMapping
+    private ResponseEntity<Void> createSong(@RequestBody Song newSongRequest, UriComponentsBuilder ucb) {
+        Song savedSong = songRepository.save(newSongRequest);
+        URI createdUriLocation = ucb.path("songs/{id}").buildAndExpand(savedSong.id()).toUri();
+        return ResponseEntity.created(createdUriLocation).build();
+    }
+
 
 }

@@ -2,6 +2,6 @@ package example.fastAPI;
 
 import org.springframework.data.annotation.Id;
 
-record Song(@Id Long id, String owner, Integer streams) {
+record Song(@Id Long id, Integer streams, String owner) {
 
 }

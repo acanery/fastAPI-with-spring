@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 
 
+import java.net.URI;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -22,12 +24,12 @@ public class SongApplicationTest {
 
     @Test
     void shouldReturnSong(){
-        ResponseEntity<String> response = restTemplate.getForEntity("/songs/1", String.class);
+        ResponseEntity<String> response = restTemplate.getForEntity("/songs/24", String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         DocumentContext documentContext = JsonPath.parse(response.getBody());
         Number id = documentContext.read("$.id");
-        assertThat(id).isEqualTo(1);
+        assertThat(id).isEqualTo(24);
     }
 
     @Test
@@ -46,15 +48,43 @@ public class SongApplicationTest {
         assertThat(songCount).isEqualTo(4);
 
         JSONArray ids = documentContext.read("$..id");
-        assertThat(ids).containsExactlyInAnyOrder(1,2,3,4);
+        assertThat(ids).containsExactlyInAnyOrder(24,25,26,27);
+
+    }
+
+    @Test
+    void shouldReturnAPageWithGivenRequest(){
+        ResponseEntity<String> response = restTemplate
+                .getForEntity("/songs?page=0&size=3&sort=streams,desc",String.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        DocumentContext documentContext = JsonPath.parse(response.getBody());
+        JSONArray streams = documentContext.read("$..streams");
+        assertThat(streams).containsExactly(160,140,120);
 
     }
 
     @DirtiesContext
     @Test
     void shouldCreateANewSong(){
-        Song createdSong = new Song(null,"popArtist", null);
-        ResponseEntity<Void> response = restTemplate.postForEntity("/songs",createdSong, Void.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        Song createdSong1 = new Song(null, 12,"popArtist1");
+        ResponseEntity<Void> pushResponse1 = restTemplate.postForEntity("/songs",createdSong1, Void.class);
+        assertThat(pushResponse1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        URI locationOfSong1 = pushResponse1.getHeaders().getLocation();
+        ResponseEntity<String> getResponse1 = restTemplate.getForEntity(locationOfSong1,String.class);
+        DocumentContext documentContext1 = JsonPath.parse(getResponse1.getBody());
+        String owner1 = documentContext1.read("$.owner");
+        assertThat(owner1).isEqualTo("popArtist1");
+
+        Song createdSong2 = new Song(null, 14,"popArtist2");
+        ResponseEntity<Void> pushResponse2 = restTemplate.postForEntity("/songs",createdSong2, Void.class);
+        assertThat(pushResponse2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        URI locationOfSong2 = pushResponse2.getHeaders().getLocation();
+        ResponseEntity<String> getResponse2 = restTemplate.getForEntity(locationOfSong2,String.class);
+        DocumentContext documentContext = JsonPath.parse(getResponse2.getBody());
+        String owner2 = documentContext.read("$.owner");
+        assertThat(owner2).isEqualTo("popArtist2");
     }
 }
