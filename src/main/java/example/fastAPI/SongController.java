@@ -50,5 +50,18 @@ class SongController {
         return ResponseEntity.created(createdUriLocation).build();
     }
 
+    @PutMapping("/{requestedId}")
+    private ResponseEntity<Void> putSong(@PathVariable Long requestedId, @RequestBody Song requestedSong){
+        Optional<Song> song = songRepository.findById(requestedId);
+        if (song.isPresent()){
+            Song updatedSong = new Song(requestedId, song.get().streams(), requestedSong.duration(), song.get().owner());
+            songRepository.save(updatedSong);
+            return ResponseEntity.noContent().build();
+        }else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
 
 }

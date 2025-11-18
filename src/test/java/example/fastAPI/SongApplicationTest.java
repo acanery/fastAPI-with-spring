@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
@@ -67,7 +69,7 @@ public class SongApplicationTest {
     @DirtiesContext
     @Test
     void shouldCreateANewSong(){
-        Song createdSong1 = new Song(null, 12,"popArtist1");
+        Song createdSong1 = new Song(null, 12,140,"popArtist1");
         ResponseEntity<Void> pushResponse1 = restTemplate.postForEntity("/songs",createdSong1, Void.class);
         assertThat(pushResponse1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -77,7 +79,7 @@ public class SongApplicationTest {
         String owner1 = documentContext1.read("$.owner");
         assertThat(owner1).isEqualTo("popArtist1");
 
-        Song createdSong2 = new Song(null, 14,"popArtist2");
+        Song createdSong2 = new Song(null, 14, 124,"popArtist2");
         ResponseEntity<Void> pushResponse2 = restTemplate.postForEntity("/songs",createdSong2, Void.class);
         assertThat(pushResponse2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -86,5 +88,24 @@ public class SongApplicationTest {
         DocumentContext documentContext = JsonPath.parse(getResponse2.getBody());
         String owner2 = documentContext.read("$.owner");
         assertThat(owner2).isEqualTo("popArtist2");
+    }
+
+    @DirtiesContext
+    @Test
+    void shouldUpdateTheDuration(){
+        int requestedDuration = 160;
+        Song songWithNewDuration = new Song(null,null, requestedDuration, null);
+        HttpEntity<Song> request = new HttpEntity<>(songWithNewDuration);
+        ResponseEntity<Void> putResponse = restTemplate.exchange("/songs/24", HttpMethod.PUT, request,Void.class);
+        assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        ResponseEntity<String> getResponse = restTemplate.getForEntity("/songs/24", String.class);
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        DocumentContext documentContext = JsonPath.parse(getResponse.getBody());
+        int newDuration = documentContext.read("$.duration");
+        assertThat(newDuration).isEqualTo(requestedDuration);
+        Number id = documentContext.read("$.id");
+        assertThat(id).isEqualTo(24);
+
     }
 }
